@@ -1,0 +1,638 @@
+<title>Telehealth ROI Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<style>
+/* Layout: investor memo. Assumptions rail on the left, findings on the right:
+   headline figures, crossover chart, cost-of-capital breakdown, sensitivity, monthly ledger. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --ink: #0d1622;
+  --ink-2: #485364;
+  --muted: #758195;
+  --rule: #dce2ea;
+  --rule-strong: #b9c3d0;
+  --accent: #12355b;
+  --accent-soft: #e6edf6;
+  --profit: #2a78d6;
+  --profit-fill: rgba(42, 120, 214, 0.10);
+  --cost: #eb6834;
+  --good: #17784a;
+  --good-soft: #e3f3ea;
+  --bad: #b8372f;
+  --bad-soft: #fbe9e7;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1016; --surface: #121922; --ink: #edf1f6; --ink-2: #b3bdca; --muted: #808c9c;
+    --rule: #233041; --rule-strong: #34445a; --accent: #9cc0ec; --accent-soft: #1a2a3e;
+    --profit: #3987e5; --profit-fill: rgba(57, 135, 229, 0.16); --cost: #d95926;
+    --good: #4cbf86; --good-soft: #13291f; --bad: #ec7a72; --bad-soft: #2e1716;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1016; --surface: #121922; --ink: #edf1f6; --ink-2: #b3bdca; --muted: #808c9c;
+  --rule: #233041; --rule-strong: #34445a; --accent: #9cc0ec; --accent-soft: #1a2a3e;
+  --profit: #3987e5; --profit-fill: rgba(57, 135, 229, 0.16); --cost: #d95926;
+  --good: #4cbf86; --good-soft: #13291f; --bad: #ec7a72; --bad-soft: #2e1716;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.5;
+  padding-inline: 16px; padding-block: 28px 56px;
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 24px; }
+.num, td, .kpi-value, .tip { font-variant-numeric: tabular-nums; }
+
+/* Header */
+header.top { display: grid; gap: 6px; padding-bottom: 18px; border-bottom: 1px solid var(--rule-strong); }
+.eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.lede { margin: 0; color: var(--ink-2); max-width: 72ch; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 12.5px; margin: 0; }
+
+.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* Assumptions rail */
+aside.rail {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r);
+  padding: 18px; display: grid; gap: 18px;
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px);
+  max-height: calc(100vh - 32px); overflow: auto;
+}
+@media (max-width: 960px) { aside.rail { position: static; max-height: none; } }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
+legend { padding: 0; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.field { display: grid; grid-template-columns: minmax(0, 1fr) 118px; align-items: center; gap: 10px; }
+.field label { font-size: 13px; color: var(--ink-2); }
+.input { display: flex; align-items: center; border: 1px solid var(--rule-strong); border-radius: 4px; background: var(--bg); }
+.input:focus-within { border-color: var(--profit); box-shadow: 0 0 0 2px var(--profit-fill); }
+.input span { font-family: var(--font-data); font-size: 12px; color: var(--muted); padding-inline: 7px; }
+.input input {
+  width: 100%; min-width: 0; border: 0; background: transparent; color: var(--ink);
+  font-family: var(--font-data); font-size: 13px; padding: 6px 8px 6px 0; text-align: right; outline: none;
+}
+.input span:first-child + input { padding-left: 0; }
+.rail-note { font-size: 12px; color: var(--muted); margin: 0; }
+.tag-illus { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cost); border: 1px solid currentColor; border-radius: 3px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+.btn {
+  font: 500 13px var(--font-body); color: var(--accent); background: transparent;
+  border: 1px solid var(--rule-strong); border-radius: 4px; padding: 7px 12px; cursor: pointer;
+}
+.btn:hover { background: var(--accent-soft); }
+.btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--profit); outline-offset: 2px; }
+
+main { display: grid; gap: 24px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+.panel-head > div:first-child { display: grid; gap: 2px; min-width: 0; }
+
+/* Headline figures */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: var(--r); background: var(--surface); }
+.kpi { padding: 16px 18px; display: grid; gap: 4px; align-content: start; border-left: 1px solid var(--rule); }
+.kpi:first-child { border-left: 0; }
+.kpi-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.kpi-value { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1.1; }
+.kpi-value small { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
+.kpi-foot { font-size: 12.5px; color: var(--ink-2); }
+.kpi.lead { background: var(--accent-soft); border-radius: var(--r) 0 0 var(--r); }
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi:nth-child(3) { border-left: 0; } .kpi:nth-child(n+3) { border-top: 1px solid var(--rule); } .kpi.lead { border-radius: var(--r) 0 0 0; } }
+@media (max-width: 520px) { .kpis { grid-template-columns: minmax(0, 1fr); } .kpi { border-left: 0; } .kpi + .kpi { border-top: 1px solid var(--rule); } .kpi.lead { border-radius: var(--r) var(--r) 0 0; } }
+
+/* Segmented horizon control */
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 4px; overflow: hidden; }
+.seg button { font: 500 12.5px var(--font-body); background: transparent; color: var(--ink-2); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule-strong); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+
+/* Chart */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 18px; height: 0; border-top: 2px solid; display: inline-block; }
+.sw.profit { border-color: var(--profit); }
+.sw.cost { border-color: var(--cost); }
+.sw.oblig { border-color: var(--cost); border-top-style: dashed; }
+.chart-box { position: relative; min-width: 0; }
+#chart { display: block; width: 100%; height: auto; overflow: visible; }
+#chart text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+#chart .lbl { font-family: var(--font-body); font-size: 12px; font-weight: 600; fill: var(--ink); }
+#chart .lbl-sub { font-family: var(--font-body); font-size: 11.5px; fill: var(--ink-2); }
+#chart .lbl, #chart .lbl-sub { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule-strong);
+  border-radius: 4px; padding: 10px 12px; font-size: 12.5px; min-width: 220px; box-shadow: 0 6px 20px rgba(10, 20, 35, 0.12);
+  display: grid; gap: 4px;
+}
+.tip[hidden] { display: none; }
+.tip b { font-family: var(--font-body); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.tip .row { display: flex; justify-content: space-between; gap: 16px; color: var(--ink-2); }
+.tip .row span:last-child { font-family: var(--font-data); color: var(--ink); }
+.tip .row i { display: inline-block; width: 10px; height: 2px; margin-right: 6px; vertical-align: middle; }
+.tip hr { border: 0; border-top: 1px solid var(--rule); margin: 2px 0; }
+.callout { font-size: 13.5px; color: var(--ink-2); margin: 0; max-width: 90ch; }
+.callout strong { color: var(--ink); }
+
+/* Breakdown + sensitivity */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 1100px) { .split { grid-template-columns: minmax(0, 1fr); } }
+table { border-collapse: collapse; width: 100%; }
+.ledger-list td { padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.ledger-list td:last-child { text-align: right; font-family: var(--font-data); }
+.ledger-list tr.total td { border-top: 1.5px solid var(--ink); border-bottom: 0; font-weight: 600; padding-top: 10px; }
+.ledger-list tr.minor td { color: var(--ink-2); }
+.ledger-list tr.minor td:first-child { padding-left: 14px; }
+
+.sens { font-size: 13px; }
+.sens th, .sens td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--rule); }
+.sens thead th { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sens tbody th { text-align: left; font-weight: 500; color: var(--ink-2); font-family: var(--font-data); }
+.sens td { font-family: var(--font-data); }
+.sens td.base { outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 600; }
+.sens td.fast { background: var(--good-soft); }
+.sens td.slow { background: var(--bad-soft); }
+
+/* Monthly ledger */
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
+.ledger { font-size: 12.5px; min-width: max-content; }
+.ledger th, .ledger td { padding: 6px 12px; white-space: nowrap; text-align: right; border-bottom: 1px solid var(--rule); }
+.ledger td { font-family: var(--font-data); }
+.ledger thead th { position: sticky; top: 0; background: var(--surface); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--rule-strong); }
+.ledger th[scope="row"] { position: sticky; left: 0; background: var(--surface); text-align: left; font-weight: 500; color: var(--ink-2); z-index: 1; border-right: 1px solid var(--rule); }
+.ledger thead th:first-child { left: 0; z-index: 2; position: sticky; }
+.ledger tr.sec th { text-align: left; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.ledger tr.sec th[scope="row"] { background: var(--accent-soft); }
+.ledger tr.strong th, .ledger tr.strong td { font-weight: 600; color: var(--ink); }
+.ledger td.neg { color: var(--bad); }
+.ledger td.pos { color: var(--good); }
+.ledger td.cross { box-shadow: inset 0 -2px 0 var(--good); }
+.ledger td.na { color: var(--muted); }
+
+footer.notes { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 110ch; }
+footer.notes p { margin: 0; }
+@media (prefers-reduced-motion: no-preference) { #chart .draw { transition: opacity .2s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Investor analysis · Telehealth program</div>
+    <h1>Telehealth ROI Calculator</h1>
+    <p class="lede">Conservative operating projection set against the full cost of the investment, including financing, interest and fees. The chart marks the month cumulative profit overtakes cash paid in, and the month it recovers the entire obligation.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" aria-label="Assumptions">
+      <fieldset>
+        <legend>Investment &amp; financing <span class="tag-illus" title="Placeholder terms. Replace with the actual offer.">Illustrative</span></legend>
+        <div class="field"><label for="price">Investment amount</label><div class="input"><span>$</span><input id="price" type="number" step="500" min="0"></div></div>
+        <div class="field"><label for="down">Down payment</label><div class="input"><span>$</span><input id="down" type="number" step="500" min="0"></div></div>
+        <div class="field"><label for="apr">Interest rate (APR)</label><div class="input"><input id="apr" type="number" step="0.25" min="0"><span>%</span></div></div>
+        <div class="field"><label for="term">Loan term</label><div class="input"><input id="term" type="number" step="1" min="1"><span>mo</span></div></div>
+        <div class="field"><label for="orig">Origination fee</label><div class="input"><input id="orig" type="number" step="0.25" min="0"><span>%</span></div></div>
+        <div class="field"><label for="otherFees">Other upfront fees</label><div class="input"><span>$</span><input id="otherFees" type="number" step="100" min="0"></div></div>
+        <div class="field"><label for="monthlyFee">Recurring monthly fee</label><div class="input"><span>$</span><input id="monthlyFee" type="number" step="25" min="0"></div></div>
+        <p class="rail-note">Origination is charged on the financed balance. Down payment and upfront fees are paid at close (month 0).</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Patient acquisition</legend>
+        <div class="field"><label for="adspend">Monthly ad spend</label><div class="input"><span>$</span><input id="adspend" type="number" step="250" min="0"></div></div>
+        <div class="field"><label for="cac">Acquisition cost / patient</label><div class="input"><span>$</span><input id="cac" type="number" step="10" min="1"></div></div>
+        <div class="field"><label for="churn">Monthly churn</label><div class="input"><input id="churn" type="number" step="0.5" min="0" max="100"><span>%</span></div></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Unit economics (per patient / month)</legend>
+        <div class="field"><label for="arpp">Revenue per patient</label><div class="input"><span>$</span><input id="arpp" type="number" step="5" min="0"></div></div>
+        <div class="field"><label for="shareBasis">Share-eligible revenue</label><div class="input"><span>$</span><input id="shareBasis" type="number" step="5" min="0"></div></div>
+        <div class="field"><label for="med">Medication cost</label><div class="input"><span>$</span><input id="med" type="number" step="1" min="0"></div></div>
+        <div class="field"><label for="rx">Doctor prescription (flat / mo)</label><div class="input"><span>$</span><input id="rx" type="number" step="5" min="0"></div></div>
+        <div class="field"><label for="proc">Processing fees</label><div class="input"><input id="proc" type="number" step="0.1" min="0"><span>%</span></div></div>
+        <div class="field"><label for="share">Net revenue share</label><div class="input"><input id="share" type="number" step="0.5" min="0"><span>%</span></div></div>
+      </fieldset>
+
+      <button class="btn" id="reset" type="button">Reset to base case</button>
+    </aside>
+
+    <main>
+      <section class="kpis" aria-label="Headline figures">
+        <div class="kpi lead">
+          <div class="kpi-label">Full payback</div>
+          <div class="kpi-value" id="k-payback">–</div>
+          <div class="kpi-foot" id="k-payback-foot"></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Cash breakeven</div>
+          <div class="kpi-value" id="k-cash">–</div>
+          <div class="kpi-foot" id="k-cash-foot"></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Total cost of investment</div>
+          <div class="kpi-value" id="k-cost">–</div>
+          <div class="kpi-foot" id="k-cost-foot"></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label" id="k-roi-label">Return on investment</div>
+          <div class="kpi-value" id="k-roi">–</div>
+          <div class="kpi-foot" id="k-roi-foot"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="chart-title">
+        <div class="panel-head">
+          <div>
+            <h2 id="chart-title">Cumulative profit vs. cost of investment</h2>
+            <p class="sub">Gross profit after ad spend and all operating costs, against what the investor has paid and owes.</p>
+          </div>
+          <div class="seg" role="group" aria-label="Projection horizon" id="horizon">
+            <button type="button" data-h="12" aria-pressed="true">12 mo</button>
+            <button type="button" data-h="24">24 mo</button>
+            <button type="button" data-h="36">36 mo</button>
+            <button type="button" data-h="60">60 mo</button>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i class="sw profit"></i>Cumulative gross profit</span>
+          <span><i class="sw cost"></i>Cumulative cash paid toward investment</span>
+          <span><i class="sw oblig"></i>Total obligation (principal + interest + fees)</span>
+        </div>
+        <div class="chart-box" id="chart-box">
+          <svg id="chart" role="img" aria-labelledby="chart-title"></svg>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <p class="callout" id="callout"></p>
+      </section>
+
+      <div class="split">
+        <section class="panel" aria-labelledby="cost-title">
+          <div>
+            <h2 id="cost-title">Cost of capital</h2>
+            <p class="sub">Everything the investor pays to own the program.</p>
+          </div>
+          <table class="ledger-list" id="cost-table"></table>
+        </section>
+
+        <section class="panel" aria-labelledby="sens-title">
+          <div>
+            <h2 id="sens-title">Payback sensitivity</h2>
+            <p class="sub">Month of full payback as churn and acquisition cost worsen. Outlined cell is the base case.</p>
+          </div>
+          <div class="scroll" style="border:0"><table class="sens" id="sens-table"></table></div>
+          <p class="sub" id="sens-note"></p>
+        </section>
+      </div>
+
+      <section class="panel" aria-labelledby="ledger-title">
+        <div>
+          <h2 id="ledger-title">Monthly ledger</h2>
+          <p class="sub">Operating rows follow the internal projection sheet line for line. Investment rows show the position after debt service.</p>
+        </div>
+        <div class="scroll"><table class="ledger" id="ledger"></table></div>
+      </section>
+
+      <footer class="notes">
+        <p><strong>Method.</strong> New patients = ad spend ÷ acquisition cost. Active patients each month = new patients + prior month's active × (1 − churn). Revenue share = share % × (share-eligible revenue − medication − processing − doctor prescription). Gross profit = revenue − ad spend − medication − doctor prescription − processing − revenue share − any recurring program fee.</p>
+        <p><strong>Financing.</strong> Standard amortizing loan on the financed balance (investment − down payment), equal monthly payments. Cash breakeven is the first month cumulative profit covers all cash paid to date; full payback is the first month it covers the entire obligation, including payments not yet due.</p>
+        <p><strong>Scope.</strong> Pre-tax. Excludes owner time, working capital and reinvestment. Months beyond the base sheet extend the same assumptions; the patient base levels off near ad-spend-driven steady state, so no growth beyond the existing budget is assumed.</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  const DEFAULTS = {
+    price: 30000, down: 5000, apr: 10, term: 36, orig: 3, otherFees: 0, monthlyFee: 0,
+    adspend: 3000, cac: 200, churn: 8,
+    arpp: 300, shareBasis: 175, med: 44, rx: 225, proc: 2.5, share: 10
+  };
+  const ids = Object.keys(DEFAULTS);
+  let horizon = 12;
+
+  const $ = (id) => document.getElementById(id);
+  const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const usd0 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  const money = (v) => (v < 0 ? '−' : '') + usd.format(Math.abs(v));
+  const money0 = (v) => (v < 0 ? '−' : '') + usd0.format(Math.abs(v));
+  const compact = (v) => {
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+    if (a >= 1e3) return s + '$' + Math.round(a / 1e3) + 'k';
+    return s + '$' + Math.round(a);
+  };
+
+  function read() {
+    const p = {};
+    ids.forEach((k) => { const v = parseFloat($(k).value); p[k] = Number.isFinite(v) ? Math.max(0, v) : 0; });
+    p.down = Math.min(p.down, p.price);
+    p.term = Math.max(1, Math.round(p.term));
+    p.cac = Math.max(1, p.cac);
+    return p;
+  }
+
+  function financing(p) {
+    const financed = Math.max(0, p.price - p.down);
+    const r = p.apr / 100 / 12;
+    const n = p.term;
+    const payment = financed === 0 ? 0 : (r === 0 ? financed / n : financed * r / (1 - Math.pow(1 + r, -n)));
+    const origFee = financed * p.orig / 100;
+    const upfront = p.down + origFee + p.otherFees;
+    const totalPayments = payment * n;
+    const interest = totalPayments - financed;
+    const obligation = upfront + totalPayments;
+    return { financed, payment, origFee, upfront, interest, totalPayments, obligation, n };
+  }
+
+  function simulate(p, months) {
+    const f = financing(p);
+    const rows = [];
+    let prevTotal = 0, cumProfit = 0, cumPaid = f.upfront;
+    const newPts = p.adspend / p.cac;
+    for (let m = 1; m <= months; m++) {
+      const churned = prevTotal * p.churn / 100;
+      const total = newPts + prevTotal - churned;
+      const revenue = total * p.arpp;
+      const shareRev = total * p.shareBasis;
+      const med = total * p.med;
+      const proc = revenue * p.proc / 100;
+      const share = Math.max(0, (shareRev - med - proc - p.rx) * p.share / 100);
+      const gross = revenue - p.adspend - med - p.rx - proc - share - p.monthlyFee;
+      cumProfit += gross;
+      const pay = m <= f.n ? f.payment : 0;
+      cumPaid += pay;
+      rows.push({
+        m, adspend: p.adspend, cac: p.cac, newPts, churnRate: p.churn, churned, total,
+        revenue, newRev: shareRev, recRev: revenue - shareRev, med, rx: p.rx, proc, share, fee: p.monthlyFee,
+        gross, cumProfit, pay, cumPaid, netCash: cumProfit - cumPaid, netOblig: cumProfit - f.obligation
+      });
+      prevTotal = total;
+    }
+    const cashBE = rows.find((r) => r.cumProfit >= r.cumPaid);
+    const payback = rows.find((r) => r.cumProfit >= f.obligation);
+    return { f, rows, cashBE: cashBE ? cashBE.m : null, payback: payback ? payback.m : null };
+  }
+
+  /* ---------- Chart ---------- */
+  function niceStep(range, target) {
+    const raw = range / target, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / mag;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+  }
+
+  function drawChart(sim) {
+    const box = $('chart-box');
+    const W = Math.max(320, box.clientWidth);
+    const H = W < 560 ? 300 : 380;
+    const m = { t: 16, r: W < 560 ? 14 : 24, b: 34, l: 58 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const rows = sim.rows, N = rows.length, f = sim.f;
+
+    const pts = [{ m: 0, cumProfit: 0, cumPaid: f.upfront }].concat(rows);
+    const maxV = Math.max(f.obligation, ...pts.map((d) => Math.max(d.cumProfit, d.cumPaid)));
+    const minV = Math.min(0, ...pts.map((d) => d.cumProfit));
+    const step = niceStep(maxV - minV || 1, 5);
+    const y0 = Math.floor(minV / step) * step, y1 = Math.ceil(maxV / step) * step;
+    const x = (i) => m.l + (i / N) * iw;
+    const y = (v) => m.t + ih - ((v - y0) / (y1 - y0)) * ih;
+
+    const xs = W < 560 ? (N <= 12 ? 3 : N <= 24 ? 6 : N <= 36 ? 12 : 20) : N <= 12 ? 1 : N <= 24 ? 3 : N <= 36 ? 6 : 12;
+    let s = '';
+    for (let v = y0; v <= y1 + 1e-6; v += step) {
+      const yy = y(v).toFixed(1);
+      s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${yy}" y2="${yy}" stroke="var(--rule)" stroke-width="${v === 0 ? 1.25 : 1}" ${v === 0 ? '' : 'stroke-dasharray="2 3"'}/>`;
+      s += `<text x="${m.l - 10}" y="${yy}" text-anchor="end" dominant-baseline="middle">${compact(v)}</text>`;
+    }
+    for (let i = 0; i <= N; i += xs) {
+      s += `<text x="${x(i).toFixed(1)}" y="${m.t + ih + 20}" text-anchor="middle">${i === 0 ? 'Close' : 'M' + i}</text>`;
+    }
+
+    // Net-positive region after full payback
+    if (sim.payback) {
+      const xa = x(sim.payback);
+      s += `<rect x="${xa.toFixed(1)}" y="${m.t}" width="${(m.l + iw - xa).toFixed(1)}" height="${ih}" fill="var(--good-soft)" opacity="0.7"/>`;
+    }
+
+    const line = (key) => pts.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join('');
+    // profit area
+    s += `<path d="${line('cumProfit')}L${x(N).toFixed(1)},${y(Math.max(0, y0)).toFixed(1)}L${x(0).toFixed(1)},${y(Math.max(0, y0)).toFixed(1)}Z" fill="var(--profit-fill)"/>`;
+    // obligation reference
+    s += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y(f.obligation).toFixed(1)}" y2="${y(f.obligation).toFixed(1)}" stroke="var(--cost)" stroke-width="1.5" stroke-dasharray="6 5"/>`;
+    s += `<text class="lbl-sub" x="${m.l + iw - 6}" y="${(y(f.obligation) - 7).toFixed(1)}" text-anchor="end" style="fill:var(--ink-2)">Total obligation ${money0(f.obligation)}</text>`;
+    // cash paid (step-like line)
+    s += `<path d="${line('cumPaid')}" fill="none" stroke="var(--cost)" stroke-width="2" stroke-linejoin="round"/>`;
+    // profit
+    s += `<path d="${line('cumProfit')}" fill="none" stroke="var(--profit)" stroke-width="2.25" stroke-linejoin="round"/>`;
+
+    // Crossover markers
+    const marker = (mo, value, label, sub, ly) => {
+      const cx = x(mo), cy = y(value);
+      const anchor = cx > m.l + iw * 0.6 ? 'end' : 'start';
+      ly = Math.max(m.t + 12, ly);
+      return `<line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${(cy + 6).toFixed(1)}" y2="${m.t + ih}" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="1 3"/>` +
+        `<line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${(ly + 20).toFixed(1)}" y2="${(cy - 6).toFixed(1)}" stroke="var(--ink-2)" stroke-width="1"/>` +
+        `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>` +
+        `<text class="lbl" x="${(cx + (anchor === 'end' ? -4 : 4)).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}">${label}</text>` +
+        `<text class="lbl-sub" x="${(cx + (anchor === 'end' ? -4 : 4)).toFixed(1)}" y="${(ly + 15).toFixed(1)}" text-anchor="${anchor}">${sub}</text>`;
+    };
+    const pbRow = sim.payback ? rows[sim.payback - 1] : null;
+    const pbLabelY = pbRow ? y(pbRow.cumProfit) - 64 : null;
+    // keep the obligation label clear of the payback marker on narrow screens
+    if (W < 560) s = s.replace(/(<text class="lbl-sub" x=")[\d.]+(" y=")[\d.-]+(" text-anchor="end" style="fill:var\(--ink-2\)">)/, `$1${m.l + iw - 4}$2${(y(f.obligation) + 15).toFixed(1)}$3`);
+    if (sim.cashBE) {
+      const r = rows[sim.cashBE - 1];
+      const ly = Math.min(y(r.cumProfit) - 64, pbLabelY !== null && sim.payback !== sim.cashBE ? pbLabelY - 44 : Infinity);
+      s += marker(sim.cashBE, r.cumProfit, `Cash breakeven · Month ${sim.cashBE}`, `Profit ${money0(r.cumProfit)} ≥ paid ${money0(r.cumPaid)}`, ly);
+    }
+    if (pbRow && sim.payback !== sim.cashBE) {
+      s += marker(sim.payback, pbRow.cumProfit, `Full payback · Month ${sim.payback}`, `Entire ${money0(f.obligation)} recovered`, pbLabelY);
+    }
+    // End label
+    const last = rows[N - 1];
+    s += `<circle cx="${x(N).toFixed(1)}" cy="${y(last.cumProfit).toFixed(1)}" r="4" fill="var(--profit)" stroke="var(--surface)" stroke-width="2"/>`;
+
+    // hover layer
+    s += `<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>`;
+    s += `<circle id="hp" r="4.5" fill="var(--profit)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+    s += `<circle id="hc" r="4.5" fill="var(--cost)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+    s += `<rect id="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" style="cursor:crosshair"/>`;
+
+    const svg = $('chart');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = s;
+
+    const tip = $('tip'), hit = svg.querySelector('#hit');
+    const xh = svg.querySelector('#xh'), hp = svg.querySelector('#hp'), hc = svg.querySelector('#hc');
+    const show = (evt) => {
+      const rect = svg.getBoundingClientRect();
+      const px = (evt.clientX - rect.left) * (W / rect.width);
+      const i = Math.max(0, Math.min(N, Math.round(((px - m.l) / iw) * N)));
+      const d = pts[i];
+      const cx = x(i);
+      xh.setAttribute('x1', cx); xh.setAttribute('x2', cx); xh.setAttribute('visibility', 'visible');
+      hp.setAttribute('cx', cx); hp.setAttribute('cy', y(d.cumProfit)); hp.setAttribute('visibility', 'visible');
+      hc.setAttribute('cx', cx); hc.setAttribute('cy', y(d.cumPaid)); hc.setAttribute('visibility', 'visible');
+      const net = d.cumProfit - d.cumPaid;
+      tip.innerHTML = `<b>${i === 0 ? 'At close' : 'Month ' + i}</b>` +
+        (i ? `<div class="row"><span>Active patients</span><span>${Math.round(d.total)}</span></div>
+              <div class="row"><span>Monthly gross profit</span><span>${money(d.gross)}</span></div><hr>` : '') +
+        `<div class="row"><span><i style="background:var(--profit)"></i>Cumulative profit</span><span>${money(d.cumProfit)}</span></div>
+         <div class="row"><span><i style="background:var(--cost)"></i>Cash paid to date</span><span>${money(d.cumPaid)}</span></div>
+         <hr>
+         <div class="row"><span>Net cash position</span><span style="color:var(${net >= 0 ? '--good' : '--bad'})">${money(net)}</span></div>
+         <div class="row"><span>Net of full obligation</span><span style="color:var(${d.cumProfit - f.obligation >= 0 ? '--good' : '--bad'})">${money(d.cumProfit - f.obligation)}</span></div>`;
+      tip.hidden = false;
+      const scale = rect.width / W;
+      const tx = cx * scale, tw = tip.offsetWidth;
+      tip.style.left = (tx + 14 + tw > rect.width ? tx - tw - 14 : tx + 14) + 'px';
+      tip.style.top = Math.max(0, (y(d.cumProfit) * scale) - tip.offsetHeight - 12) + 'px';
+    };
+    const hide = () => { tip.hidden = true; [xh, hp, hc].forEach((e) => e.setAttribute('visibility', 'hidden')); };
+    hit.addEventListener('pointermove', show);
+    hit.addEventListener('pointerdown', show);
+    hit.addEventListener('pointerleave', hide);
+  }
+
+  /* ---------- Panels ---------- */
+  function renderKpis(p, sim) {
+    const f = sim.f, rows = sim.rows, last = rows[rows.length - 1];
+    $('k-payback').innerHTML = sim.payback ? `${sim.payback}<small>months</small>` : `>${horizon}<small>months</small>`;
+    $('k-payback-foot').textContent = sim.payback
+      ? `Cumulative profit clears the full ${money0(f.obligation)} obligation.`
+      : `Not reached within the ${horizon}-month horizon.`;
+    $('k-cash').innerHTML = sim.cashBE ? `${sim.cashBE}<small>${sim.cashBE === 1 ? 'month' : 'months'}</small>` : `>${horizon}<small>months</small>`;
+    $('k-cash-foot').textContent = sim.cashBE
+      ? `Profit covers every dollar paid in to date, ${f.financed > 0 ? 'including loan payments' : 'including the purchase'}.`
+      : `Not reached within the horizon.`;
+    $('k-cost').textContent = money0(f.obligation);
+    $('k-cost-foot').textContent = f.financed > 0
+      ? `${money0(f.payment)}/mo for ${f.n} mo · ${money0(f.interest + f.origFee + p.otherFees)} interest & fees`
+      : `Paid in full at close`;
+    const roi = (last.cumProfit - f.obligation) / f.obligation;
+    $('k-roi-label').textContent = `${horizon}-month ROI`;
+    $('k-roi').textContent = f.obligation > 0 ? (roi * 100).toFixed(0) + '%' : '–';
+    $('k-roi-foot').textContent = `${money0(last.cumProfit)} profit · ${(last.cumProfit / f.obligation).toFixed(1)}× total cost`;
+
+    const r12 = rows[11];
+    let txt = '';
+    if (sim.cashBE && sim.payback) {
+      txt = `<strong>The investment is cash-positive from month ${sim.cashBE}</strong> and fully paid back, interest and fees included, by <strong>month ${sim.payback}</strong>. `;
+    } else if (sim.cashBE) {
+      txt = `<strong>Cash-positive from month ${sim.cashBE}.</strong> Full payback of the obligation falls beyond the ${horizon}-month window. `;
+    } else {
+      txt = `<strong>Under these assumptions, profit does not overtake cash paid in within ${horizon} months.</strong> `;
+    }
+    if (r12) txt += `By month 12 the program has produced ${money0(r12.cumProfit)} in cumulative gross profit against ${money0(r12.cumPaid)} paid toward the investment. `;
+    txt += `Steady state is about ${Math.round((p.adspend / p.cac) / Math.max(p.churn / 100, 1e-9))} active patients at the current ad budget.`;
+    $('callout').innerHTML = txt;
+  }
+
+  function renderCost(p, f) {
+    const rows = [
+      ['Investment amount', f.financed + p.down, ''],
+      ['Down payment at close', p.down, 'minor'],
+      ['Financed balance', f.financed, 'minor'],
+      [`Interest over ${f.n} months at ${p.apr}% APR`, f.interest, ''],
+      [`Origination fee (${p.orig}% of financed)`, f.origFee, ''],
+      ['Other upfront fees', p.otherFees, ''],
+      ['Total cost of investment', f.obligation, 'total'],
+    ];
+    let h = rows.map(([k, v, c]) => `<tr class="${c}"><td>${k}</td><td>${money(v)}</td></tr>`).join('');
+    h += `<tr class="minor"><td>Monthly loan payment</td><td>${money(f.payment)}</td></tr>`;
+    h += `<tr class="minor"><td>Cash due at close</td><td>${money(f.upfront)}</td></tr>`;
+    if (p.monthlyFee > 0) h += `<tr class="minor"><td>Recurring program fee (in operating costs)</td><td>${money(p.monthlyFee)}/mo</td></tr>`;
+    $('cost-table').innerHTML = h;
+  }
+
+  function renderSens(p) {
+    const churns = [p.churn, p.churn + 2, p.churn + 4, p.churn + 6].map((v) => Math.round(v * 10) / 10);
+    const cacs = [p.cac, p.cac * 1.25, p.cac * 1.5, p.cac * 1.75].map(Math.round);
+    const base = simulate(p, 120).payback;
+    let h = `<thead><tr><th style="text-align:left">Churn \\ CAC</th>${cacs.map((c) => `<th>${usd0.format(c)}</th>`).join('')}</tr></thead><tbody>`;
+    churns.forEach((ch, ri) => {
+      h += `<tr><th scope="row">${ch}%</th>`;
+      cacs.forEach((c, ci) => {
+        const pb = simulate(Object.assign({}, p, { churn: ch, cac: c }), 120).payback;
+        const cls = [ri === 0 && ci === 0 ? 'base' : '', pb && base && pb <= base + 2 ? 'fast' : '', !pb || (base && pb > base * 2) ? 'slow' : ''].join(' ');
+        h += `<td class="${cls}">${pb ? 'M' + pb : '>120'}</td>`;
+      });
+      h += '</tr>';
+    });
+    $('sens-table').innerHTML = h + '</tbody>';
+    $('sens-note').textContent = `Columns raise acquisition cost by 25% steps; rows add 2 points of monthly churn. Financing terms held constant.`;
+  }
+
+  function renderLedger(sim) {
+    const rows = sim.rows, f = sim.f;
+    const head = `<thead><tr><th scope="col" style="text-align:left">Line item</th><th scope="col">Close</th>${rows.map((r) => `<th scope="col">Month ${r.m}</th>`).join('')}</tr></thead>`;
+    const na = '<td class="na">—</td>';
+    const line = (label, fn, opts = {}) => `<tr class="${opts.cls || ''}"><th scope="row">${label}</th>${opts.close !== undefined ? opts.close : na}${rows.map((r) => {
+      const v = fn(r); const c = opts.sign ? (v < 0 ? 'neg' : 'pos') : '';
+      const cross = opts.crossAt && r.m === opts.crossAt ? ' cross' : '';
+      return `<td class="${c}${cross}">${opts.fmt ? opts.fmt(v) : money(v)}</td>`;
+    }).join('')}</tr>`;
+    const sec = (t) => `<tr class="sec"><th scope="row">${t}</th><th colspan="${rows.length + 1}"></th></tr>`;
+    const int = (v) => Math.round(v).toString();
+    let b = '<tbody>';
+    b += sec('Acquisition');
+    b += line('Ad spend', (r) => r.adspend);
+    b += line('Customer acquisition cost', (r) => r.cac);
+    b += line('New patients', (r) => r.newPts, { fmt: int });
+    b += line('Churn rate', (r) => r.churnRate, { fmt: (v) => v + '%' });
+    b += line('Churned patients', (r) => r.churned, { fmt: int });
+    b += line('Total patients', (r) => r.total, { fmt: int, cls: 'strong' });
+    b += sec('Revenue');
+    b += line('Total revenue', (r) => r.revenue, { cls: 'strong' });
+    b += line('New revenue', (r) => r.newRev);
+    b += line('Recurring revenue', (r) => r.recRev);
+    b += sec('Operating costs');
+    b += line('Cost of medication', (r) => r.med);
+    b += line('Doctor prescription', (r) => r.rx);
+    b += line('Processing fees', (r) => r.proc);
+    b += line('Net revenue share', (r) => r.share);
+    if (rows[0].fee > 0) b += line('Recurring program fee', (r) => r.fee);
+    b += line('Gross profit', (r) => r.gross, { cls: 'strong' });
+    b += line('Cumulative profit', (r) => r.cumProfit, { cls: 'strong' });
+    b += sec('Investment');
+    b += line('Payment toward investment', (r) => r.pay, { close: `<td>${money(f.upfront)}</td>` });
+    b += line('Cumulative cash paid', (r) => r.cumPaid, { close: `<td>${money(f.upfront)}</td>` });
+    b += line('Net cash position', (r) => r.netCash, { sign: true, cls: 'strong', close: `<td class="neg">${money(-f.upfront)}</td>`, crossAt: sim.cashBE });
+    b += line('Net of full obligation', (r) => r.netOblig, { sign: true, close: `<td class="neg">${money(-f.obligation)}</td>`, crossAt: sim.payback });
+    $('ledger').innerHTML = head + b + '</tbody>';
+  }
+
+  let last = null;
+  function render() {
+    const p = read();
+    const sim = simulate(p, horizon);
+    last = sim;
+    renderKpis(p, sim);
+    drawChart(sim);
+    renderCost(p, sim.f);
+    renderSens(p);
+    renderLedger(sim);
+  }
+
+  function setDefaults() { ids.forEach((k) => { $(k).value = DEFAULTS[k]; }); }
+
+  setDefaults();
+  ids.forEach((k) => $(k).addEventListener('input', render));
+  $('reset').addEventListener('click', () => { setDefaults(); render(); });
+  document.querySelectorAll('#horizon button').forEach((b) => b.addEventListener('click', () => {
+    horizon = +b.dataset.h;
+    document.querySelectorAll('#horizon button').forEach((o) => o.setAttribute('aria-pressed', o === b ? 'true' : 'false'));
+    render();
+  }));
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => last && drawChart(last), 100); });
+  render();
+})();
+</script>
