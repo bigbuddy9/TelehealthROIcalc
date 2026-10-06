@@ -1,46 +1,59 @@
-<title>Telehealth ROI Calculator</title>
+<title>RubyMD Clinic ROI Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: investor memo. Assumptions rail on the left, findings on the right:
-   headline figures, crossover chart, cost-of-capital breakdown, sensitivity, monthly ledger. */
+/* Layout: RubyMD investor memo. Brand bar and hero, then assumptions rail on the left and findings on the right:
+   headline figures, crossover chart, cost-of-capital breakdown, sensitivity, monthly ledger.
+   Brand: navy ink, royal blue accent, soft blue wash on a white dot-grid ground (from joinrubymd.com). */
 :root {
-  --bg: #f3f5f8;
+  --bg: #f8fafd;
+  --dot: rgba(11, 22, 48, 0.07);
+  --wash: rgba(58, 118, 252, 0.10);
   --surface: #ffffff;
-  --ink: #0d1622;
-  --ink-2: #485364;
-  --muted: #758195;
-  --rule: #dce2ea;
-  --rule-strong: #b9c3d0;
-  --accent: #12355b;
-  --accent-soft: #e6edf6;
-  --profit: #2a78d6;
-  --profit-fill: rgba(42, 120, 214, 0.10);
+  --ink: #0b1630;
+  --ink-2: #4f5661;
+  --muted: #727a86;
+  --rule: #e3e8f1;
+  --rule-strong: #c4cddb;
+  --brand: #3a76fc;
+  --navy: #0f1c42;
+  --navy-ink: #ffffff;
+  --accent: #2d6ae0;
+  --accent-soft: #eaf1ff;
+  --profit: #2d6ae0;
+  --profit-fill: rgba(45, 106, 224, 0.10);
   --cost: #eb6834;
   --good: #17784a;
-  --good-soft: #e3f3ea;
+  --good-soft: #e5f4ec;
   --bad: #b8372f;
   --bad-soft: #fbe9e7;
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --r: 6px;
+  --shadow: 0 1px 2px rgba(11, 22, 48, 0.04), 0 8px 24px rgba(11, 22, 48, 0.06);
+  --font-display: "Instrument Serif", "Times New Roman", Georgia, serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-data: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --r: 14px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0b1016; --surface: #121922; --ink: #edf1f6; --ink-2: #b3bdca; --muted: #808c9c;
-    --rule: #233041; --rule-strong: #34445a; --accent: #9cc0ec; --accent-soft: #1a2a3e;
-    --profit: #3987e5; --profit-fill: rgba(57, 135, 229, 0.16); --cost: #d95926;
-    --good: #4cbf86; --good-soft: #13291f; --bad: #ec7a72; --bad-soft: #2e1716;
+    --bg: #070e1f; --dot: rgba(255, 255, 255, 0.05); --wash: rgba(58, 118, 252, 0.16);
+    --surface: #0e1830; --ink: #eef2fa; --ink-2: #b6bfd0; --muted: #8590a5;
+    --rule: #1d2a47; --rule-strong: #2f3f63; --brand: #5a8dff; --navy: #5a8dff; --navy-ink: #06102a;
+    --accent: #8db0ff; --accent-soft: #15254a;
+    --profit: #5a8dff; --profit-fill: rgba(90, 141, 255, 0.16); --cost: #d95926;
+    --good: #4cbf86; --good-soft: #10291f; --bad: #ec7a72; --bad-soft: #2e1716;
+    --shadow: none;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0b1016; --surface: #121922; --ink: #edf1f6; --ink-2: #b3bdca; --muted: #808c9c;
-  --rule: #233041; --rule-strong: #34445a; --accent: #9cc0ec; --accent-soft: #1a2a3e;
-  --profit: #3987e5; --profit-fill: rgba(57, 135, 229, 0.16); --cost: #d95926;
-  --good: #4cbf86; --good-soft: #13291f; --bad: #ec7a72; --bad-soft: #2e1716;
+  --bg: #070e1f; --dot: rgba(255, 255, 255, 0.05); --wash: rgba(58, 118, 252, 0.16);
+  --surface: #0e1830; --ink: #eef2fa; --ink-2: #b6bfd0; --muted: #8590a5;
+  --rule: #1d2a47; --rule-strong: #2f3f63; --brand: #5a8dff; --navy: #5a8dff; --navy-ink: #06102a;
+  --accent: #8db0ff; --accent-soft: #15254a;
+  --profit: #5a8dff; --profit-fill: rgba(90, 141, 255, 0.16); --cost: #d95926;
+  --good: #4cbf86; --good-soft: #10291f; --bad: #ec7a72; --bad-soft: #2e1716;
+  --shadow: none;
   color-scheme: dark;
 }
 
@@ -48,35 +61,48 @@
 body {
   background: var(--bg); color: var(--ink);
   font-family: var(--font-body); font-size: 14px; line-height: 1.5;
-  padding-inline: 16px; padding-block: 28px 56px;
+  padding-inline: 16px; padding-block: 0 56px;
+  background-image: radial-gradient(60rem 30rem at 100% 0%, var(--wash), transparent 70%), radial-gradient(var(--dot) 1px, transparent 1.2px);
+  background-size: auto, 22px 22px;
+  -webkit-font-smoothing: antialiased;
 }
 .wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 24px; }
 .num, td, .kpi-value, .tip { font-variant-numeric: tabular-nums; }
 
-/* Header */
-header.top { display: grid; gap: 6px; padding-bottom: 18px; border-bottom: 1px solid var(--rule-strong); }
-.eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
-.lede { margin: 0; color: var(--ink-2); max-width: 72ch; }
-h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; text-wrap: balance; }
+/* Brand bar + hero */
+.brandbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 16px; border-bottom: 1px solid var(--rule); }
+.logo { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 22px; letter-spacing: -0.03em; }
+.logo svg { width: 30px; height: 26px; flex: none; }
+.logo .divider { width: 1px; height: 20px; background: var(--rule-strong); margin-inline: 6px; }
+.logo .product { font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 8px; background: var(--navy); color: var(--navy-ink); text-decoration: none; font-weight: 500; font-size: 14px; padding: 10px 20px; border-radius: 999px; white-space: nowrap; }
+.pill:hover { filter: brightness(1.15); }
+.pill:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+@media (max-width: 520px) { .logo .divider, .logo .product { display: none; } .pill { padding: 8px 14px; font-size: 13px; } }
+header.top { display: grid; gap: 12px; padding-block: 36px 8px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 6vw, 68px); line-height: 1.0; margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 em { color: var(--accent); font-style: italic; }
+.lede { margin: 0; color: var(--ink-2); max-width: 66ch; font-size: 16px; line-height: 1.6; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
 .sub { color: var(--muted); font-size: 12.5px; margin: 0; }
 
-.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: start; }
+.layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 24px; align-items: start; }
 @media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
 /* Assumptions rail */
 aside.rail {
-  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); box-shadow: var(--shadow);
   padding: 18px; display: grid; gap: 18px;
   position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px);
   max-height: calc(100vh - 32px); overflow: auto;
 }
 @media (max-width: 960px) { aside.rail { position: static; max-height: none; } }
 fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
-legend { padding: 0; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+legend { padding: 0; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); font-weight: 700; }
 .field { display: grid; grid-template-columns: minmax(0, 1fr) 118px; align-items: center; gap: 10px; }
 .field label { font-size: 13px; color: var(--ink-2); }
-.input { display: flex; align-items: center; border: 1px solid var(--rule-strong); border-radius: 4px; background: var(--bg); }
+.input { display: flex; align-items: center; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); }
 .input:focus-within { border-color: var(--profit); box-shadow: 0 0 0 2px var(--profit-fill); }
 .input span { font-family: var(--font-data); font-size: 12px; color: var(--muted); padding-inline: 7px; }
 .input input {
@@ -85,36 +111,36 @@ legend { padding: 0; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.1em;
 }
 .input span:first-child + input { padding-left: 0; }
 .rail-note { font-size: 12px; color: var(--muted); margin: 0; }
-.tag-illus { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cost); border: 1px solid currentColor; border-radius: 3px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+.tag-illus { display: inline-block; letter-spacing: 0.04em; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cost); border: 1px solid currentColor; border-radius: 3px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
 .btn {
-  font: 500 13px var(--font-body); color: var(--accent); background: transparent;
-  border: 1px solid var(--rule-strong); border-radius: 4px; padding: 7px 12px; cursor: pointer;
+  font: 500 13px var(--font-body); color: var(--ink); background: transparent;
+  border: 1px solid var(--rule-strong); border-radius: 999px; padding: 9px 14px; cursor: pointer;
 }
 .btn:hover { background: var(--accent-soft); }
 .btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--profit); outline-offset: 2px; }
 
 main { display: grid; gap: 24px; min-width: 0; }
-.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); box-shadow: var(--shadow); padding: 22px; display: grid; gap: 16px; min-width: 0; }
 .panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
 .panel-head > div:first-child { display: grid; gap: 2px; min-width: 0; }
 
 /* Headline figures */
-.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: var(--r); background: var(--surface); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
 .kpi { padding: 16px 18px; display: grid; gap: 4px; align-content: start; border-left: 1px solid var(--rule); }
 .kpi:first-child { border-left: 0; }
 .kpi-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.kpi-value { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1.1; }
+.kpi-value { font-family: var(--font-display); font-size: 42px; font-weight: 400; line-height: 1; letter-spacing: -0.01em; }
 .kpi-value small { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
 .kpi-foot { font-size: 12.5px; color: var(--ink-2); }
-.kpi.lead { background: var(--accent-soft); border-radius: var(--r) 0 0 var(--r); }
-@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi:nth-child(3) { border-left: 0; } .kpi:nth-child(n+3) { border-top: 1px solid var(--rule); } .kpi.lead { border-radius: var(--r) 0 0 0; } }
-@media (max-width: 520px) { .kpis { grid-template-columns: minmax(0, 1fr); } .kpi { border-left: 0; } .kpi + .kpi { border-top: 1px solid var(--rule); } .kpi.lead { border-radius: var(--r) var(--r) 0 0; } }
+.kpi.lead { background: var(--accent-soft); }
+.kpi.lead .kpi-value { color: var(--accent); }
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi:nth-child(3) { border-left: 0; } .kpi:nth-child(n+3) { border-top: 1px solid var(--rule); } }
+@media (max-width: 520px) { .kpis { grid-template-columns: minmax(0, 1fr); } .kpi { border-left: 0; } .kpi + .kpi { border-top: 1px solid var(--rule); } }
 
 /* Segmented horizon control */
-.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 4px; overflow: hidden; }
-.seg button { font: 500 12.5px var(--font-body); background: transparent; color: var(--ink-2); border: 0; padding: 6px 12px; cursor: pointer; }
-.seg button + button { border-left: 1px solid var(--rule-strong); }
-.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; overflow: hidden; padding: 2px; gap: 2px; }
+.seg button { font: 500 12.5px var(--font-body); background: transparent; color: var(--ink-2); border: 0; border-radius: 999px; padding: 6px 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--navy); color: var(--navy-ink); }
 
 /* Chart */
 .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12.5px; color: var(--ink-2); }
@@ -131,7 +157,7 @@ main { display: grid; gap: 24px; min-width: 0; }
 #chart .lbl, #chart .lbl-sub { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .tip {
   position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule-strong);
-  border-radius: 4px; padding: 10px 12px; font-size: 12.5px; min-width: 220px; box-shadow: 0 6px 20px rgba(10, 20, 35, 0.12);
+  border-radius: 10px; padding: 10px 12px; font-size: 12.5px; min-width: 220px; box-shadow: 0 6px 20px rgba(10, 20, 35, 0.12);
   display: grid; gap: 4px;
 }
 .tip[hidden] { display: none; }
@@ -163,14 +189,14 @@ table { border-collapse: collapse; width: 100%; }
 .sens td.slow { background: var(--bad-soft); }
 
 /* Monthly ledger */
-.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; }
 .ledger { font-size: 12.5px; min-width: max-content; }
 .ledger th, .ledger td { padding: 6px 12px; white-space: nowrap; text-align: right; border-bottom: 1px solid var(--rule); }
 .ledger td { font-family: var(--font-data); }
 .ledger thead th { position: sticky; top: 0; background: var(--surface); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--rule-strong); }
 .ledger th[scope="row"] { position: sticky; left: 0; background: var(--surface); text-align: left; font-weight: 500; color: var(--ink-2); z-index: 1; border-right: 1px solid var(--rule); }
 .ledger thead th:first-child { left: 0; z-index: 2; position: sticky; }
-.ledger tr.sec th { text-align: left; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.ledger tr.sec th { text-align: left; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); background: var(--accent-soft); font-weight: 600; }
 .ledger tr.sec th[scope="row"] { background: var(--accent-soft); }
 .ledger tr.strong th, .ledger tr.strong td { font-weight: 600; color: var(--ink); }
 .ledger td.neg { color: var(--bad); }
@@ -179,15 +205,22 @@ table { border-collapse: collapse; width: 100%; }
 .ledger td.na { color: var(--muted); }
 
 footer.notes { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 110ch; }
+.sitefoot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 12.5px; color: var(--muted); }
+.sitefoot .logo { font-size: 16px; }
+.sitefoot .logo svg { width: 22px; height: 19px; }
 footer.notes p { margin: 0; }
 @media (prefers-reduced-motion: no-preference) { #chart .draw { transition: opacity .2s; } }
 </style>
 
 <div class="wrap">
+  <nav class="brandbar" aria-label="RubyMD">
+    <a class="logo" href="https://joinrubymd.com/" target="_blank" rel="noopener"><svg viewBox="0 0 30 26" aria-hidden="true"><path d="M9.6 1.6c.9-1 2.2-1.6 3.6-1.6h3.6c1.4 0 2.7.6 3.6 1.6l8.1 9.6c1.2 1.4 1.1 3.5-.2 4.8l-8.6 8.6c-.9.9-2.1 1.4-3.4 1.4H13.7c-1.3 0-2.5-.5-3.4-1.4L1.7 16c-1.3-1.3-1.4-3.4-.2-4.8z" fill="var(--brand)"/></svg>RubyMD<span class="divider"></span><span class="product">Clinic ROI Calculator</span></a>
+    <a class="pill" href="https://joinrubymd.com/" target="_blank" rel="noopener">Book a Call <span aria-hidden="true">→</span></a>
+  </nav>
   <header class="top">
-    <div class="eyebrow">Investor analysis · Telehealth program</div>
-    <h1>Telehealth ROI Calculator</h1>
-    <p class="lede">Conservative operating projection set against the full cost of the investment, including financing, interest and fees. The chart marks the month cumulative profit overtakes cash paid in, and the month it recovers the entire obligation.</p>
+    <div class="eyebrow">Investor analysis · Weight-loss telemedicine clinic</div>
+    <h1>See exactly when your clinic <em>pays for itself.</em></h1>
+    <p class="lede">A conservative operating projection set against the full cost of launching a RubyMD clinic, including financing, interest and fees. The chart marks the month cumulative profit overtakes cash paid in, and the month it recovers the entire investment.</p>
   </header>
 
   <div class="layout">
@@ -304,8 +337,14 @@ footer.notes p { margin: 0; }
         <p><strong>Method.</strong> New patients = ad spend ÷ acquisition cost. Active patients each month = new patients + prior month's active × (1 − churn). Revenue share = share % × (share-eligible revenue − medication − processing − doctor prescription). Gross profit = revenue − ad spend − medication − doctor prescription − processing − revenue share − any recurring program fee.</p>
         <p><strong>Financing.</strong> Standard amortizing loan on the financed balance (investment − down payment), equal monthly payments. Cash breakeven is the first month cumulative profit covers all cash paid to date; full payback is the first month it covers the entire obligation, including payments not yet due.</p>
         <p><strong>Scope.</strong> Pre-tax. Excludes owner time, working capital and reinvestment. Months beyond the base sheet extend the same assumptions; the patient base levels off near ad-spend-driven steady state, so no growth beyond the existing budget is assumed.</p>
+        <p><strong>Disclaimer.</strong> Projections are illustrative estimates based on the assumptions shown and are not a guarantee of future results.</p>
       </footer>
     </main>
+  </div>
+
+  <div class="sitefoot">
+    <span class="logo"><svg viewBox="0 0 30 26" aria-hidden="true"><path d="M9.6 1.6c.9-1 2.2-1.6 3.6-1.6h3.6c1.4 0 2.7.6 3.6 1.6l8.1 9.6c1.2 1.4 1.1 3.5-.2 4.8l-8.6 8.6c-.9.9-2.1 1.4-3.4 1.4H13.7c-1.3 0-2.5-.5-3.4-1.4L1.7 16c-1.3-1.3-1.4-3.4-.2-4.8z" fill="var(--brand)"/></svg>RubyMD</span>
+    <span>Prepared by RubyMD for prospective clinic partners.</span>
   </div>
 </div>
 
