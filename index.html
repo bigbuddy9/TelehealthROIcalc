@@ -83,6 +83,9 @@ header.top { display: grid; gap: 12px; padding-block: 36px 8px; }
 .eyebrow { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 6vw, 68px); line-height: 1.0; margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
 h1 em { color: var(--accent); font-style: italic; }
+.fineprint { margin: 0; font-size: 12px; color: var(--muted); }
+.fineprint a, footer.notes a { color: inherit; }
+.fineprint-inline { color: var(--muted); font-size: 12.5px; }
 .lede { margin: 0; color: var(--ink-2); max-width: 66ch; font-size: 16px; line-height: 1.6; }
 h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
 .sub { color: var(--muted); font-size: 12.5px; margin: 0; }
@@ -221,8 +224,9 @@ footer.notes p { margin: 0; }
   </nav>
   <header class="top">
     <div class="eyebrow">Investor analysis · Weight-loss telemedicine clinic</div>
-    <h1>See exactly when your clinic <em>pays for itself.</em></h1>
-    <p class="lede">A conservative operating projection set against the full cost of launching a RubyMD clinic, including financing, interest and fees. The chart marks the month cumulative profit overtakes cash paid in, and the month it recovers the entire investment.</p>
+    <h1>See when your clinic <em>could pay for itself.</em></h1>
+    <p class="lede">A hypothetical, conservative operating projection set against the full cost of launching a RubyMD clinic, including financing, interest and fees. The chart marks the projected month cumulative profit overtakes cash paid in, and the month it would recover the entire investment.</p>
+    <p class="fineprint">Projections only, not guaranteed results. See <a href="#disclaimer">disclaimer</a>.</p>
   </header>
 
   <div class="layout">
@@ -262,12 +266,12 @@ footer.notes p { margin: 0; }
     <main>
       <section class="kpis" aria-label="Headline figures">
         <div class="kpi lead">
-          <div class="kpi-label">Full payback</div>
+          <div class="kpi-label">Projected full payback</div>
           <div class="kpi-value" id="k-payback">–</div>
           <div class="kpi-foot" id="k-payback-foot"></div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">Cash breakeven</div>
+          <div class="kpi-label">Projected cash breakeven</div>
           <div class="kpi-value" id="k-cash">–</div>
           <div class="kpi-foot" id="k-cash-foot"></div>
         </div>
@@ -277,7 +281,7 @@ footer.notes p { margin: 0; }
           <div class="kpi-foot" id="k-cost-foot"></div>
         </div>
         <div class="kpi">
-          <div class="kpi-label" id="k-roi-label">Return on investment</div>
+          <div class="kpi-label" id="k-roi-label">Projected return on investment</div>
           <div class="kpi-value" id="k-roi">–</div>
           <div class="kpi-foot" id="k-roi-foot"></div>
         </div>
@@ -339,14 +343,14 @@ footer.notes p { margin: 0; }
         <p><strong>Method.</strong> New patients = ad spend ÷ acquisition cost. Active patients each month = new patients + prior month's active × (1 − churn). New-patient revenue = new patients that month × revenue per patient; recurring revenue = returning patients × revenue per patient. Revenue share = 10% of new-patient profit, where new-patient profit = new-patient revenue − processing on that revenue − ad spend (when selected) − medication for new patients − doctor prescription. In any month that profit is zero or negative, no share is paid. Gross profit = revenue − ad spend − medication − doctor prescription − processing − revenue share − any recurring program fee.</p>
         <p><strong>Financing.</strong> Standard amortizing loan on the financed balance (investment − down payment), equal monthly payments. Cash breakeven is the first month cumulative profit covers all cash paid to date; full payback is the first month it covers the entire obligation, including payments not yet due.</p>
         <p><strong>Scope.</strong> Pre-tax. Excludes owner time, working capital and reinvestment. Months beyond the base sheet extend the same assumptions; the patient base levels off near ad-spend-driven steady state, so no growth beyond the existing budget is assumed.</p>
-        <p><strong>Disclaimer.</strong> Projections are illustrative estimates based on the assumptions shown and are not a guarantee of future results.</p>
+        <p id="disclaimer"><strong>Important disclaimer.</strong> These numbers are projections only, not guaranteed results. They are hypothetical estimates based solely on the assumptions shown, which you can change, and are provided for illustration and discussion. RubyMD makes no income, earnings or profit claims, and nothing on this page is a promise or representation that any clinic will achieve these or any results. Actual results vary and depend on many factors, including market conditions, advertising performance, patient retention, pricing, costs, regulation and the operator's own effort and business decisions. Many businesses earn less than projected, and some lose money. This page is not financial, investment, tax or legal advice; review any investment with your own advisors before committing funds.</p>
       </footer>
     </main>
   </div>
 
   <div class="sitefoot">
     <span class="logo"><svg viewBox="0 0 30 26" aria-hidden="true"><path d="M9.6 1.6c.9-1 2.2-1.6 3.6-1.6h3.6c1.4 0 2.7.6 3.6 1.6l8.1 9.6c1.2 1.4 1.1 3.5-.2 4.8l-8.6 8.6c-.9.9-2.1 1.4-3.4 1.4H13.7c-1.3 0-2.5-.5-3.4-1.4L1.7 16c-1.3-1.3-1.4-3.4-.2-4.8z" fill="var(--brand)"/></svg>RubyMD</span>
-    <span>Prepared by RubyMD for prospective clinic partners.</span>
+    <span>Prepared by RubyMD for prospective clinic partners. Projections only, not guaranteed results.</span>
   </div>
 </div>
 
@@ -563,22 +567,22 @@ footer.notes p { margin: 0; }
       ? `${money0(f.payment)}/mo for ${f.n} mo · ${money0(f.interest + f.origFee + p.otherFees)} interest & fees`
       : `Paid in full at close`;
     const roi = (last.cumProfit - f.obligation) / f.obligation;
-    $('k-roi-label').textContent = `${horizon}-month ROI`;
+    $('k-roi-label').textContent = `Projected ${horizon}-month ROI`;
     $('k-roi').textContent = f.obligation > 0 ? (roi * 100).toFixed(0) + '%' : '–';
     $('k-roi-foot').textContent = `${money0(last.cumProfit)} profit · ${(last.cumProfit / f.obligation).toFixed(1)}× total cost`;
 
     const r12 = rows[11];
     let txt = '';
     if (sim.cashBE && sim.payback) {
-      txt = `<strong>The investment is cash-positive from month ${sim.cashBE}</strong> and fully paid back, interest and fees included, by <strong>month ${sim.payback}</strong>. `;
+      txt = `<strong>Under these assumptions, the investment projects cash-positive from month ${sim.cashBE}</strong> and fully paid back, interest and fees included, by <strong>month ${sim.payback}</strong>. `;
     } else if (sim.cashBE) {
-      txt = `<strong>Cash-positive from month ${sim.cashBE}.</strong> Full payback of the obligation falls beyond the ${horizon}-month window. `;
+      txt = `<strong>Under these assumptions, projected cash-positive from month ${sim.cashBE}.</strong> Projected full payback of the obligation falls beyond the ${horizon}-month window. `;
     } else {
       txt = `<strong>Under these assumptions, profit does not overtake cash paid in within ${horizon} months.</strong> `;
     }
-    if (r12) txt += `By month 12 the program has produced ${money0(r12.cumProfit)} in cumulative gross profit against ${money0(r12.cumPaid)} paid toward the investment. `;
-    txt += `Steady state is about ${Math.round((p.adspend / p.cac) / Math.max(p.churn / 100, 1e-9))} active patients at the current ad budget.`;
-    $('callout').innerHTML = txt;
+    if (r12) txt += `By month 12 the model projects ${money0(r12.cumProfit)} in cumulative gross profit against ${money0(r12.cumPaid)} paid toward the investment. `;
+    txt += `Projected steady state is about ${Math.round((p.adspend / p.cac) / Math.max(p.churn / 100, 1e-9))} active patients at the current ad budget.`;
+    $('callout').innerHTML = txt + ' <span class="fineprint-inline">Projection only, not a guarantee of results.</span>';
   }
 
   function renderCost(p, f) {
