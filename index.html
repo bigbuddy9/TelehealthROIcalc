@@ -113,8 +113,6 @@ legend { padding: 0; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.1em;
   font-family: var(--font-data); font-size: 13px; padding: 6px 8px 6px 0; text-align: right; outline: none;
 }
 .input span:first-child + input { padding-left: 0; }
-.check { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
-.check input { margin: 3px 0 0; accent-color: var(--accent); }
 .rail-note { font-size: 12px; color: var(--muted); margin: 0; }
 .tag-illus { display: inline-block; letter-spacing: 0.04em; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cost); border: 1px solid currentColor; border-radius: 3px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
 .btn {
@@ -256,8 +254,7 @@ footer.notes p { margin: 0; }
         <div class="field"><label for="med">Medication cost</label><div class="input"><span>$</span><input id="med" type="number" step="1" min="0"></div></div>
         <div class="field"><label for="rx">Doctor prescription (flat / mo)</label><div class="input"><span>$</span><input id="rx" type="number" step="5" min="0"></div></div>
         <div class="field"><label for="proc">Processing fees</label><div class="input"><input id="proc" type="number" step="0.1" min="0"><span>%</span></div></div>
-        <div class="field"><label for="share">Revenue share (of new-client profit)</label><div class="input"><input id="share" type="number" step="0.5" min="0"><span>%</span></div></div>
-        <label class="check" for="shareAds"><input id="shareAds" type="checkbox"> Subtract ad spend before the revenue share</label>
+        <div class="field"><label for="share">Revenue share (of profit)</label><div class="input"><input id="share" type="number" step="0.5" min="0"><span>%</span></div></div>
       </fieldset>
 
       <button class="btn" id="reset" type="button">Reset to base case</button>
@@ -340,7 +337,7 @@ footer.notes p { margin: 0; }
       </section>
 
       <footer class="notes">
-        <p><strong>Method.</strong> New patients = ad spend ÷ acquisition cost. Active patients each month = new patients + prior month's active × (1 − churn). New-patient revenue = new patients that month × revenue per patient; recurring revenue = returning patients × revenue per patient. Revenue share = 10% of new-patient profit, where new-patient profit = new-patient revenue − processing on that revenue − ad spend (when selected) − medication for new patients − doctor prescription. In any month that profit is zero or negative, no share is paid. Gross profit = revenue − ad spend − medication − doctor prescription − processing − revenue share − any recurring program fee.</p>
+        <p><strong>Method.</strong> New patients = ad spend ÷ acquisition cost. Active patients each month = new patients + prior month's active × (1 − churn). New-patient revenue = new patients that month × revenue per patient; recurring revenue = returning patients × revenue per patient. Revenue share = a flat 10% of monthly profit from the patients RubyMD brings in, where profit = total revenue − processing − ad spend − medication − doctor prescription. In any month that profit is zero or negative, no share is paid. Gross profit = revenue − ad spend − medication − doctor prescription − processing − revenue share − any recurring program fee.</p>
         <p><strong>Financing.</strong> Standard amortizing loan on the financed balance (investment − down payment), equal monthly payments. Cash breakeven is the first month cumulative profit covers all cash paid to date; full payback is the first month it covers the entire obligation, including payments not yet due.</p>
         <p><strong>Scope.</strong> Pre-tax. Excludes owner time, working capital and reinvestment. Months beyond the base sheet extend the same assumptions; the patient base levels off near ad-spend-driven steady state, so no growth beyond the existing budget is assumed.</p>
         <p id="disclaimer"><strong>Important disclaimer.</strong> These numbers are projections only, not guaranteed results. They are hypothetical estimates based solely on the assumptions shown, which you can change, and are provided for illustration and discussion. RubyMD makes no income, earnings or profit claims, and nothing on this page is a promise or representation that any clinic will achieve these or any results. Actual results vary and depend on many factors, including market conditions, advertising performance, patient retention, pricing, costs, regulation and the operator's own effort and business decisions. Many businesses earn less than projected, and some lose money. This page is not financial, investment, tax or legal advice; review any investment with your own advisors before committing funds.</p>
@@ -362,7 +359,6 @@ footer.notes p { margin: 0; }
     arpp: 300, med: 44, rx: 225, proc: 2.5, share: 10
   };
   const ids = Object.keys(DEFAULTS);
-  const SHARE_ADS_DEFAULT = true;
   let horizon = 12;
 
   const $ = (id) => document.getElementById(id);
@@ -380,7 +376,6 @@ footer.notes p { margin: 0; }
   function read() {
     const p = {};
     ids.forEach((k) => { const v = parseFloat($(k).value); p[k] = Number.isFinite(v) ? Math.max(0, v) : 0; });
-    p.shareAds = $('shareAds').checked;
     p.down = Math.min(p.down, p.price);
     p.term = Math.max(1, Math.round(p.term));
     p.cac = Math.max(1, p.cac);
@@ -412,16 +407,16 @@ footer.notes p { margin: 0; }
       const newRev = newPts * p.arpp;
       const med = total * p.med;
       const proc = revenue * p.proc / 100;
-      // Revenue share: 10% of the profit on this month's new patients only; nothing is owed when that profit is negative.
-      const newProfit = newRev - newRev * p.proc / 100 - newPts * p.med - p.rx - (p.shareAds ? p.adspend : 0);
-      const share = Math.max(0, newProfit) * p.share / 100;
+      // Revenue share: flat 10% of monthly profit on all patients; nothing is owed when that profit is negative.
+      const shareBase = revenue - proc - p.adspend - med - p.rx;
+      const share = Math.max(0, shareBase) * p.share / 100;
       const gross = revenue - p.adspend - med - p.rx - proc - share - p.monthlyFee;
       cumProfit += gross;
       const pay = m <= f.n ? f.payment : 0;
       cumPaid += pay;
       rows.push({
         m, adspend: p.adspend, cac: p.cac, newPts, churnRate: p.churn, churned, total,
-        revenue, newRev, recRev: revenue - newRev, newProfit, med, rx: p.rx, proc, share, fee: p.monthlyFee,
+        revenue, newRev, recRev: revenue - newRev, shareBase, med, rx: p.rx, proc, share, fee: p.monthlyFee,
         gross, cumProfit, pay, cumPaid, netCash: cumProfit - cumPaid, netOblig: cumProfit - f.obligation
       });
       prevTotal = total;
@@ -647,8 +642,8 @@ footer.notes p { margin: 0; }
     b += line('Cost of medication', (r) => r.med);
     b += line('Doctor prescription', (r) => r.rx);
     b += line('Processing fees', (r) => r.proc);
-    b += line('New-patient profit (share basis)', (r) => r.newProfit, { sign: true });
-    b += line('Revenue share (10% of new-patient profit)', (r) => r.share);
+    b += line('Profit before revenue share', (r) => r.shareBase, { sign: true });
+    b += line('Revenue share (10% of profit)', (r) => r.share);
     if (rows[0].fee > 0) b += line('Recurring program fee', (r) => r.fee);
     b += line('Gross profit', (r) => r.gross, { cls: 'strong' });
     b += line('Cumulative profit', (r) => r.cumProfit, { cls: 'strong' });
@@ -672,11 +667,10 @@ footer.notes p { margin: 0; }
     renderLedger(sim);
   }
 
-  function setDefaults() { ids.forEach((k) => { $(k).value = DEFAULTS[k]; }); $('shareAds').checked = SHARE_ADS_DEFAULT; }
+  function setDefaults() { ids.forEach((k) => { $(k).value = DEFAULTS[k]; }); }
 
   setDefaults();
   ids.forEach((k) => $(k).addEventListener('input', render));
-  $('shareAds').addEventListener('change', render);
   $('reset').addEventListener('click', () => { setDefaults(); render(); });
   document.querySelectorAll('#horizon button').forEach((b) => b.addEventListener('click', () => {
     horizon = +b.dataset.h;
