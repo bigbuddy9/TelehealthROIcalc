@@ -230,7 +230,7 @@ footer.notes p { margin: 0; }
   <div class="layout">
     <aside class="rail" aria-label="Assumptions">
       <fieldset>
-        <legend>Investment &amp; financing <span class="tag-illus" title="Placeholder terms. Replace with the actual offer.">Illustrative</span></legend>
+        <legend>Investment &amp; financing <span class="tag-illus" title="Enter the terms of your offer.">Adjustable</span></legend>
         <div class="field"><label for="price">Investment amount</label><div class="input"><span>$</span><input id="price" type="number" step="500" min="0"></div></div>
         <div class="field"><label for="down">Down payment</label><div class="input"><span>$</span><input id="down" type="number" step="500" min="0"></div></div>
         <div class="field"><label for="apr">Interest rate (APR)</label><div class="input"><input id="apr" type="number" step="0.25" min="0"><span>%</span></div></div>
@@ -238,7 +238,7 @@ footer.notes p { margin: 0; }
         <div class="field"><label for="orig">Origination fee</label><div class="input"><input id="orig" type="number" step="0.25" min="0"><span>%</span></div></div>
         <div class="field"><label for="otherFees">Other upfront fees</label><div class="input"><span>$</span><input id="otherFees" type="number" step="100" min="0"></div></div>
         <div class="field"><label for="monthlyFee">Recurring monthly fee</label><div class="input"><span>$</span><input id="monthlyFee" type="number" step="25" min="0"></div></div>
-        <p class="rail-note">Origination is charged on the financed balance. Down payment and upfront fees are paid at close (month 0).</p>
+        <p class="rail-note">Enter your own terms; every figure updates instantly. For a cash purchase, set the down payment to the full amount. Origination is charged on the financed balance; down payment and upfront fees are paid at close (month 0).</p>
       </fieldset>
 
       <fieldset>
@@ -353,10 +353,32 @@ footer.notes p { margin: 0; }
 
 <script>
 (function () {
+  /* =====================================================================
+     BASE-CASE SETTINGS — edit these values to change what the page opens with.
+     Every value also appears as an editable field on the page, and
+     "Reset to base case" returns to exactly these numbers.
+     ===================================================================== */
   const DEFAULTS = {
-    price: 40000, down: 5000, apr: 10, term: 36, orig: 3, otherFees: 0, monthlyFee: 0,
-    adspend: 3000, cac: 200, churn: 8,
-    arpp: 300, med: 44, rx: 225, proc: 2.5, share: 10
+    // Investment & financing
+    price: 40000,     // Investment amount ($)
+    down: 5000,       // Down payment at close ($). Set equal to price for a cash purchase.
+    apr: 10,          // Interest rate, annual (%). Set 0 for no interest.
+    term: 36,         // Loan term (months)
+    orig: 3,          // Origination fee (% of financed balance)
+    otherFees: 0,     // Other upfront fees ($)
+    monthlyFee: 0,    // Recurring monthly program fee ($)
+
+    // Patient acquisition
+    adspend: 3000,    // Monthly ad spend ($)
+    cac: 200,         // Acquisition cost per patient ($)
+    churn: 8,         // Monthly churn (%)
+
+    // Unit economics (per patient per month)
+    arpp: 300,        // Revenue per patient ($)
+    med: 44,          // Medication cost ($)
+    rx: 225,          // Doctor prescription, flat per month ($)
+    proc: 2.5,        // Processing fees (% of revenue)
+    share: 10         // Revenue share (% of profit)
   };
   const ids = Object.keys(DEFAULTS);
   let horizon = 12;
