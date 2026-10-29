@@ -1,0 +1,21 @@
+<!--
+  RubyMD ROI Calculator — embed snippet
+  Paste this where the calculator should appear on any page of your site
+  (Webflow: Embed element · WordPress: Custom HTML block · Framer: Embed).
+  Change the src to wherever you uploaded roi-calculator.html.
+-->
+<iframe
+  id="rubymd-roi"
+  src="https://joinrubymd.com/roi-calculator.html"
+  title="RubyMD Clinic ROI Calculator"
+  loading="lazy"
+  style="width:100%; border:0; display:block; min-height:1200px;"
+></iframe>
+<script>
+  /* Grow the iframe to fit the calculator so there is no inner scrollbar. */
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'rubymd-roi-height') return;
+    var frame = document.getElementById('rubymd-roi');
+    if (frame && e.source === frame.contentWindow) frame.style.height = e.data.height + 'px';
+  });
+</script>
